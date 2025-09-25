@@ -2,14 +2,12 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from ...shared.config import get_settings
 from ...shared.logging import configure_logging, get_logger
-
 from .worker import IngestWorker
 
 
@@ -72,5 +70,3 @@ if __name__ == "__main__":
 
     settings = get_settings()
     uvicorn.run("app.main:app", host="0.0.0.0", port=settings.service_port, reload=True)
-
-

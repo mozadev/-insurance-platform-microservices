@@ -1,14 +1,12 @@
 """AWS Lambda handler for ingesting events from SQS (SNS fanout)."""
 
 import json
-import os
-from typing import Any, Dict, List
+from typing import Any
 
+from shared.aws import get_opensearch_client, get_s3_client
 from shared.config import get_settings
-from shared.aws import get_s3_client, get_opensearch_client
 from shared.events import EventValidator
 from shared.logging import configure_logging, get_logger
-
 
 _LOGGER_CONFIGURED = False
 
@@ -21,7 +19,7 @@ def _ensure_logging():
         _LOGGER_CONFIGURED = True
 
 
-def _extract_event_from_sns_envelope(sqs_record_body: Dict[str, Any]) -> Dict[str, Any]:
+def _extract_event_from_sns_envelope(sqs_record_body: dict[str, Any]) -> dict[str, Any]:
     # Standard SNS → SQS envelope
     if "Message" in sqs_record_body:
         try:
@@ -39,7 +37,7 @@ def _extract_event_from_sns_envelope(sqs_record_body: Dict[str, Any]) -> Dict[st
     return sqs_record_body
 
 
-def _normalize_policy(p: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_policy(p: dict[str, Any]) -> dict[str, Any]:
     return {
         "policyId": p.get("policy_id") or p.get("policyId"),
         "customerId": p.get("customer_id") or p.get("customerId"),
@@ -56,7 +54,7 @@ def _normalize_policy(p: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _normalize_claim(c: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_claim(c: dict[str, Any]) -> dict[str, Any]:
     return {
         "claimId": c.get("claim_id") or c.get("claimId"),
         "policyId": c.get("policy_id") or c.get("policyId"),
@@ -72,7 +70,7 @@ def _normalize_claim(c: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """SQS batch event handler.
 
     Expects SQS records that wrap SNS messages containing event envelopes
@@ -86,9 +84,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     opensearch = get_opensearch_client(settings)
     validator = EventValidator()
 
-    failures: List[Dict[str, str]] = []
+    failures: list[dict[str, str]] = []
 
-    records: List[Dict[str, Any]] = event.get("Records", [])
+    records: list[dict[str, Any]] = event.get("Records", [])
     for record in records:
         receipt_handle = record.get("receiptHandle") or record.get("receipt_handle")
         try:
@@ -110,11 +108,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     Body=json.dumps(domain_event).encode("utf-8"),
                     ContentType="application/json",
                 )
-                policy = domain_event.get("policy") or domain_event.get("data", {}).get("policy") or domain_event
+                policy = (
+                    domain_event.get("policy")
+                    or domain_event.get("data", {}).get("policy")
+                    or domain_event
+                )
                 doc_id = policy.get("policy_id") or policy.get("policyId")
                 if doc_id:
                     doc = _normalize_policy(policy)
-                    opensearch.index(index=f"{settings.opensearch_index_prefix}-policies", id=doc_id, body=doc)
+                    opensearch.index(
+                        index=f"{settings.opensearch_index_prefix}-policies",
+                        id=doc_id,
+                        body=doc,
+                    )
             elif event_type.startswith("Claim"):
                 key = f"claims/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -123,11 +129,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     Body=json.dumps(domain_event).encode("utf-8"),
                     ContentType="application/json",
                 )
-                claim = domain_event.get("claim") or domain_event.get("data", {}).get("claim") or domain_event
+                claim = (
+                    domain_event.get("claim")
+                    or domain_event.get("data", {}).get("claim")
+                    or domain_event
+                )
                 doc_id = claim.get("claim_id") or claim.get("claimId")
                 if doc_id:
                     doc = _normalize_claim(claim)
-                    opensearch.index(index=f"{settings.opensearch_index_prefix}-claims", id=doc_id, body=doc)
+                    opensearch.index(
+                        index=f"{settings.opensearch_index_prefix}-claims",
+                        id=doc_id,
+                        body=doc,
+                    )
 
         except Exception as e:
             logger.error("Record processing failed", error=str(e))
@@ -136,5 +150,3 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
     # Partial batch response for SQS/Lambda to retry failed items only
     return {"batchItemFailures": failures}
-
-

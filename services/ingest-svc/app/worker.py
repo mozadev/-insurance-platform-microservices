@@ -2,10 +2,10 @@
 
 import asyncio
 import json
-from typing import Any, Dict
+from typing import Any
 
+from ...shared.aws import get_opensearch_client, get_s3_client, get_sqs_client
 from ...shared.config import get_settings
-from ...shared.aws import get_sqs_client, get_s3_client, get_opensearch_client
 from ...shared.events import EventValidator
 from ...shared.logging import LoggerMixin
 
@@ -41,24 +41,36 @@ class IngestWorker(LoggerMixin):
 
                     for msg in messages:
                         receipt_handle = msg["ReceiptHandle"]
-                        body = json.loads(msg["Body"]) if isinstance(msg.get("Body"), str) else msg.get("Body", {})
+                        body = (
+                            json.loads(msg["Body"])
+                            if isinstance(msg.get("Body"), str)
+                            else msg.get("Body", {})
+                        )
                         event = self._extract_event_from_sns_envelope(body)
                         await self._process_event(event)
                         # delete after success
-                        self.sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
+                        self.sqs.delete_message(
+                            QueueUrl=queue_url, ReceiptHandle=receipt_handle
+                        )
                 except Exception as e:
-                    self.logger.error("Worker loop error", error=str(e), queue=queue_url)
+                    self.logger.error(
+                        "Worker loop error", error=str(e), queue=queue_url
+                    )
                     continue
 
             try:
-                await asyncio.wait_for(self._stopping.wait(), timeout=poll_interval_seconds)
-            except asyncio.TimeoutError:
+                await asyncio.wait_for(
+                    self._stopping.wait(), timeout=poll_interval_seconds
+                )
+            except TimeoutError:
                 pass
 
     async def stop(self) -> None:
         self._stopping.set()
 
-    def _extract_event_from_sns_envelope(self, sns_body: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_event_from_sns_envelope(
+        self, sns_body: dict[str, Any]
+    ) -> dict[str, Any]:
         # LocalStack/SNS via SQS delivers message with Records for SNS
         # We expect sns_body to already be SNS envelope or raw event
         if "Message" in sns_body:
@@ -76,7 +88,7 @@ class IngestWorker(LoggerMixin):
                     return {}
         return sns_body
 
-    async def _process_event(self, event: Dict[str, Any]) -> None:
+    async def _process_event(self, event: dict[str, Any]) -> None:
         if not event or not self.validator.validate_event(event):
             self.logger.warning("Skipping invalid event")
             return
@@ -89,7 +101,7 @@ class IngestWorker(LoggerMixin):
             await self._store_bronze("claims", event)
             await self._index_claim(event)
 
-    async def _store_bronze(self, domain: str, event: Dict[str, Any]) -> None:
+    async def _store_bronze(self, domain: str, event: dict[str, Any]) -> None:
         key = f"{domain}/bronze/{event['eventType']}/{event['eventId']}.json"
         self.s3.put_object(
             Bucket=self.settings.s3_bronze_bucket,
@@ -97,9 +109,11 @@ class IngestWorker(LoggerMixin):
             Body=json.dumps(event).encode("utf-8"),
             ContentType="application/json",
         )
-        self.logger.info("Stored event to S3 bronze", key=key, bucket=self.settings.s3_bronze_bucket)
+        self.logger.info(
+            "Stored event to S3 bronze", key=key, bucket=self.settings.s3_bronze_bucket
+        )
 
-    async def _index_policy(self, event: Dict[str, Any]) -> None:
+    async def _index_policy(self, event: dict[str, Any]) -> None:
         policy = event.get("policy") or event.get("data", {}).get("policy") or event
         doc_id = policy.get("policy_id") or policy.get("policyId")
         if not doc_id:
@@ -109,7 +123,7 @@ class IngestWorker(LoggerMixin):
         self.opensearch.index(index=index, id=doc_id, body=body)
         self.logger.info("Indexed policy document", index=index, id=doc_id)
 
-    async def _index_claim(self, event: Dict[str, Any]) -> None:
+    async def _index_claim(self, event: dict[str, Any]) -> None:
         claim = event.get("claim") or event.get("data", {}).get("claim") or event
         doc_id = claim.get("claim_id") or claim.get("claimId")
         if not doc_id:
@@ -119,7 +133,7 @@ class IngestWorker(LoggerMixin):
         self.opensearch.index(index=index, id=doc_id, body=body)
         self.logger.info("Indexed claim document", index=index, id=doc_id)
 
-    def _normalize_policy(self, p: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_policy(self, p: dict[str, Any]) -> dict[str, Any]:
         return {
             "policyId": p.get("policy_id") or p.get("policyId"),
             "customerId": p.get("customer_id") or p.get("customerId"),
@@ -135,7 +149,7 @@ class IngestWorker(LoggerMixin):
             "type": "policy",
         }
 
-    def _normalize_claim(self, c: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_claim(self, c: dict[str, Any]) -> dict[str, Any]:
         return {
             "claimId": c.get("claim_id") or c.get("claimId"),
             "policyId": c.get("policy_id") or c.get("policyId"),
@@ -149,5 +163,3 @@ class IngestWorker(LoggerMixin):
             "updatedAt": c.get("updated_at") or c.get("updatedAt"),
             "type": "claim",
         }
-
-

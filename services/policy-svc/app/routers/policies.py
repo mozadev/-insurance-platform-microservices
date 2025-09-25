@@ -1,13 +1,17 @@
 """Policy API routes."""
 
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from ...shared.logging import LoggerMixin
 from ..auth.jwt_stub import JWTStub
-from ..models import PolicyCreate, PolicyResponse, PolicyListResponse, PolicyUpdate, ErrorResponse
+from ..models import (
+    PolicyCreate,
+    PolicyListResponse,
+    PolicyResponse,
+    PolicyUpdate,
+)
 from ..repositories.dynamodb import PolicyRepository
 
 router = APIRouter(prefix="/policies", tags=["policies"])
@@ -16,79 +20,73 @@ security = HTTPBearer()
 
 class PolicyService(LoggerMixin):
     """Policy service business logic."""
-    
-    def __init__(self, repository: PolicyRepository, event_publisher, jwt_auth: JWTStub):
+
+    def __init__(
+        self, repository: PolicyRepository, event_publisher, jwt_auth: JWTStub
+    ):
         self.repository = repository
         self.event_publisher = event_publisher
         self.jwt_auth = jwt_auth
-    
-    def create_policy(self, policy_data: PolicyCreate, customer_id: str) -> PolicyResponse:
+
+    def create_policy(
+        self, policy_data: PolicyCreate, customer_id: str
+    ) -> PolicyResponse:
         """Create a new policy."""
         # Create policy in database
         policy = self.repository.create_policy(policy_data)
-        
+
         # Publish event
         policy_dict = policy.dict()
         self.event_publisher.publish_policy_created(policy_dict)
-        
+
         return PolicyResponse(**policy_dict)
-    
+
     def get_policy(self, policy_id: str, customer_id: str) -> PolicyResponse:
         """Get a policy by ID."""
         policy = self.repository.get_policy(policy_id)
         if not policy:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Policy not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Policy not found"
             )
-        
+
         # Check if policy belongs to customer
         if policy.customer_id != customer_id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
             )
-        
+
         return PolicyResponse(**policy.dict())
-    
+
     def get_customer_policies(
-        self, 
-        customer_id: str, 
-        limit: int = 20, 
-        next_token: Optional[str] = None
+        self, customer_id: str, limit: int = 20, next_token: str | None = None
     ) -> PolicyListResponse:
         """Get policies for a customer."""
         policies, next_token = self.repository.get_customer_policies(
             customer_id, limit, next_token
         )
-        
+
         policy_responses = [PolicyResponse(**policy.dict()) for policy in policies]
-        
+
         return PolicyListResponse(
             policies=policy_responses,
             total=len(policy_responses),
-            next_token=next_token
+            next_token=next_token,
         )
-    
+
     def update_policy(
-        self, 
-        policy_id: str, 
-        update_data: PolicyUpdate, 
-        customer_id: str
+        self, policy_id: str, update_data: PolicyUpdate, customer_id: str
     ) -> PolicyResponse:
         """Update a policy."""
         # Check if policy exists and belongs to customer
         existing_policy = self.repository.get_policy(policy_id)
         if not existing_policy:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Policy not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Policy not found"
             )
 
         if existing_policy.customer_id != customer_id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
             )
 
         # Update policy
@@ -96,7 +94,7 @@ class PolicyService(LoggerMixin):
         if not updated_policy:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update policy"
+                detail="Failed to update policy",
             )
 
         # Publish event
@@ -125,7 +123,9 @@ def get_policy_service() -> PolicyService:
     return PolicyService(repository, event_publisher, jwt_auth)
 
 
-def get_current_customer(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+def get_current_customer(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
     """Get current customer from JWT token."""
     from ...shared.config import get_settings
     from ..auth.jwt_stub import JWTStub
@@ -137,7 +137,7 @@ def get_current_customer(credentials: HTTPAuthorizationCredentials = Depends(sec
     if not customer_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials"
+            detail="Invalid authentication credentials",
         )
 
     return customer_id
@@ -147,7 +147,7 @@ def get_current_customer(credentials: HTTPAuthorizationCredentials = Depends(sec
 async def create_policy(
     policy_data: PolicyCreate,
     customer_id: str = Depends(get_current_customer),
-    service: PolicyService = Depends(get_policy_service)
+    service: PolicyService = Depends(get_policy_service),
 ):
     """Create a new policy."""
     try:
@@ -155,7 +155,7 @@ async def create_policy(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create policy: {str(e)}"
+            detail=f"Failed to create policy: {str(e)}",
         ) from e
 
 
@@ -163,7 +163,7 @@ async def create_policy(
 async def get_policy(
     policy_id: str,
     customer_id: str = Depends(get_current_customer),
-    service: PolicyService = Depends(get_policy_service)
+    service: PolicyService = Depends(get_policy_service),
 ):
     """Get a policy by ID."""
     return service.get_policy(policy_id, customer_id)
@@ -173,8 +173,8 @@ async def get_policy(
 async def get_customer_policies(
     customer_id: str = Depends(get_current_customer),
     limit: int = Query(20, ge=1, le=100),
-    next_token: Optional[str] = Query(None),
-    service: PolicyService = Depends(get_policy_service)
+    next_token: str | None = Query(None),
+    service: PolicyService = Depends(get_policy_service),
 ):
     """Get policies for the current customer."""
     return service.get_customer_policies(customer_id, limit, next_token)
@@ -185,7 +185,7 @@ async def update_policy(
     policy_id: str,
     update_data: PolicyUpdate,
     customer_id: str = Depends(get_current_customer),
-    service: PolicyService = Depends(get_policy_service)
+    service: PolicyService = Depends(get_policy_service),
 ):
     """Update a policy."""
     return service.update_policy(policy_id, update_data, customer_id)

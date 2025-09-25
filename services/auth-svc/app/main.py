@@ -1,6 +1,7 @@
 """Auth service main application."""
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,7 +16,7 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.service_name, settings.log_level)
     logger = get_logger(__name__)
-    
+
     logger.info("Auth service starting up", service_name=settings.service_name)
     yield
     logger.info("Auth service shutting down")
@@ -25,7 +26,7 @@ app = FastAPI(
     title="Auth Service",
     description="Authentication service stub",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -47,5 +48,6 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     settings = get_settings()
     uvicorn.run("app.main:app", host="0.0.0.0", port=settings.service_port, reload=True)

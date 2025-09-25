@@ -1,3 +1,1 @@
 """ingest-svc application package."""
-
-
