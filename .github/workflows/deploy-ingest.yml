@@ -1,4 +1,4 @@
-name: Deploy ingest-svc (Lambda container)
+name: Deploy ingest-svc (Lambda container) - OIDC fix
 
 on:
   push:
