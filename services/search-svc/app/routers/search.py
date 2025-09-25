@@ -68,7 +68,7 @@ class SearchService(LoggerMixin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Bulk indexing failed: {str(e)}"
-            )
+            ) from e
 
 
 # Dependency injection
@@ -91,8 +91,8 @@ def get_current_customer(credentials: HTTPAuthorizationCredentials = Depends(sec
     
     # For search service, we'll use a simple token validation
     # In production, this would integrate with the auth service
-    settings = get_settings()
-    logger = get_logger(__name__)
+    _ = get_settings()
+    _ = get_logger(__name__)
     
     # Simple token validation for demo purposes
     if not credentials.credentials or credentials.credentials != "demo-token":
