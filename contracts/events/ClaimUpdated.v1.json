@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://events.ins/v1/ClaimUpdated.json",
+  "type": "object",
+  "required": ["eventId", "eventType", "eventVersion", "occurredAt", "claim"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this event instance"
+    },
+    "eventType": {
+      "const": "ClaimUpdated",
+      "description": "Type of the event"
+    },
+    "eventVersion": {
+      "const": 1,
+      "description": "Version of the event schema"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the event occurred"
+    },
+    "traceId": {
+      "type": "string",
+      "description": "OpenTelemetry trace ID for distributed tracing"
+    },
+    "claim": {
+      "type": "object",
+      "required": ["claimId", "policyId", "customerId", "status", "amount", "occurredAt"],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "pattern": "^CLAIM-[A-Z0-9]{8}$",
+          "description": "Unique claim identifier"
+        },
+        "policyId": {
+          "type": "string",
+          "pattern": "^POL-[A-Z0-9]{8}$",
+          "description": "Associated policy identifier"
+        },
+        "customerId": {
+          "type": "string",
+          "pattern": "^CUST-[A-Z0-9]{8}$",
+          "description": "Customer identifier"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "closed", "in_review"],
+          "description": "Current status of the claim"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Claim amount in USD"
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the claim incident occurred"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Optional description of the claim"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["auto", "property", "health", "life", "other"],
+          "description": "Category of the claim"
+        },
+        "updatedFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of fields that were updated"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

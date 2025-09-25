@@ -1,0 +1,24 @@
+# Global owners
+* @cesar
+
+# Architecture and infrastructure
+docs/architecture.md @cesar
+infra/ @cesar
+*.tf @cesar
+
+# Core services
+services/policy-svc/ @cesar
+services/claim-svc/ @cesar
+services/search-svc/ @cesar
+services/ingest-svc/ @cesar
+services/gateway-bff/ @cesar
+
+# Event contracts
+contracts/ @cesar
+
+# CI/CD
+.github/workflows/ @cesar
+
+# Local development
+local/ @cesar
+Makefile @cesar

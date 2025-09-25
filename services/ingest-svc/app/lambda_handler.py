@@ -1,0 +1,140 @@
+"""AWS Lambda handler for ingesting events from SQS (SNS fanout)."""
+
+import json
+import os
+from typing import Any, Dict, List
+
+from shared.config import get_settings
+from shared.aws import get_s3_client, get_opensearch_client
+from shared.events import EventValidator
+from shared.logging import configure_logging, get_logger
+
+
+_LOGGER_CONFIGURED = False
+
+
+def _ensure_logging():
+    global _LOGGER_CONFIGURED
+    if not _LOGGER_CONFIGURED:
+        settings = get_settings()
+        configure_logging(settings.service_name, settings.log_level)
+        _LOGGER_CONFIGURED = True
+
+
+def _extract_event_from_sns_envelope(sqs_record_body: Dict[str, Any]) -> Dict[str, Any]:
+    # Standard SNS → SQS envelope
+    if "Message" in sqs_record_body:
+        try:
+            return json.loads(sqs_record_body["Message"])  # Publisher payload
+        except json.JSONDecodeError:
+            return {}
+    if "Records" in sqs_record_body and sqs_record_body["Records"]:
+        record = sqs_record_body["Records"][0]
+        message = record.get("Sns", {}).get("Message")
+        if message:
+            try:
+                return json.loads(message)
+            except json.JSONDecodeError:
+                return {}
+    return sqs_record_body
+
+
+def _normalize_policy(p: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "policyId": p.get("policy_id") or p.get("policyId"),
+        "customerId": p.get("customer_id") or p.get("customerId"),
+        "status": p.get("status"),
+        "premium": p.get("premium"),
+        "effectiveDate": (p.get("effective_date") or p.get("effectiveDate")),
+        "expirationDate": (p.get("expiration_date") or p.get("expirationDate")),
+        "coverageType": p.get("coverage_type") or p.get("coverageType"),
+        "deductible": p.get("deductible"),
+        "coverageLimit": p.get("coverage_limit") or p.get("coverageLimit"),
+        "createdAt": p.get("created_at") or p.get("createdAt"),
+        "updatedAt": p.get("updated_at") or p.get("updatedAt"),
+        "type": "policy",
+    }
+
+
+def _normalize_claim(c: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "claimId": c.get("claim_id") or c.get("claimId"),
+        "policyId": c.get("policy_id") or c.get("policyId"),
+        "customerId": c.get("customer_id") or c.get("customerId"),
+        "status": c.get("status"),
+        "amount": c.get("amount"),
+        "occurredAt": c.get("occurred_at") or c.get("occurredAt"),
+        "description": c.get("description"),
+        "category": c.get("category"),
+        "createdAt": c.get("created_at") or c.get("createdAt"),
+        "updatedAt": c.get("updated_at") or c.get("updatedAt"),
+        "type": "claim",
+    }
+
+
+def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+    """SQS batch event handler.
+
+    Expects SQS records that wrap SNS messages containing event envelopes
+    validated against contracts in contracts/events.
+    """
+    _ensure_logging()
+    logger = get_logger(__name__)
+
+    settings = get_settings()
+    s3 = get_s3_client(settings)
+    opensearch = get_opensearch_client(settings)
+    validator = EventValidator()
+
+    failures: List[Dict[str, str]] = []
+
+    records: List[Dict[str, Any]] = event.get("Records", [])
+    for record in records:
+        receipt_handle = record.get("receiptHandle") or record.get("receipt_handle")
+        try:
+            body = record.get("body")
+            sqs_body = json.loads(body) if isinstance(body, str) else (body or {})
+            domain_event = _extract_event_from_sns_envelope(sqs_body)
+
+            if not domain_event or not validator.validate_event(domain_event):
+                logger.warning("Skipping invalid event")
+                continue
+
+            event_type = domain_event.get("eventType")
+            # Persist bronze
+            if event_type.startswith("Policy"):
+                key = f"policies/bronze/{event_type}/{domain_event['eventId']}.json"
+                s3.put_object(
+                    Bucket=settings.s3_bronze_bucket,
+                    Key=key,
+                    Body=json.dumps(domain_event).encode("utf-8"),
+                    ContentType="application/json",
+                )
+                policy = domain_event.get("policy") or domain_event.get("data", {}).get("policy") or domain_event
+                doc_id = policy.get("policy_id") or policy.get("policyId")
+                if doc_id:
+                    doc = _normalize_policy(policy)
+                    opensearch.index(index=f"{settings.opensearch_index_prefix}-policies", id=doc_id, body=doc)
+            elif event_type.startswith("Claim"):
+                key = f"claims/bronze/{event_type}/{domain_event['eventId']}.json"
+                s3.put_object(
+                    Bucket=settings.s3_bronze_bucket,
+                    Key=key,
+                    Body=json.dumps(domain_event).encode("utf-8"),
+                    ContentType="application/json",
+                )
+                claim = domain_event.get("claim") or domain_event.get("data", {}).get("claim") or domain_event
+                doc_id = claim.get("claim_id") or claim.get("claimId")
+                if doc_id:
+                    doc = _normalize_claim(claim)
+                    opensearch.index(index=f"{settings.opensearch_index_prefix}-claims", id=doc_id, body=doc)
+
+        except Exception as e:
+            logger.error("Record processing failed", error=str(e))
+            if record.get("messageId"):
+                failures.append({"itemIdentifier": record["messageId"]})
+
+    # Partial batch response for SQS/Lambda to retry failed items only
+    return {"batchItemFailures": failures}
+
+

@@ -1,0 +1,243 @@
+version: '3.8'
+
+services:
+  # LocalStack for AWS services simulation
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: insurance-localstack
+    ports:
+      - "4566:4566"            # LocalStack Gateway
+      - "4510-4559:4510-4559"  # External services port range
+    environment:
+      - DEBUG=1
+      - PERSISTENCE=1
+      - LAMBDA_EXECUTOR=docker
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - SERVICES=s3,dynamodb,sns,sqs,lambda,stepfunctions,apigateway,iam,sts
+      - DEFAULT_REGION=us-east-1
+      - HOST_TMP_FOLDER=${TMPDIR:-/tmp/}localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${TMPDIR:-/tmp/}localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - insurance-network
+
+  # OpenSearch for search functionality
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: insurance-opensearch
+    environment:
+      - discovery.type=single-node
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis for caching and circuit breaker
+  redis:
+    image: redis:7-alpine
+    container_name: insurance-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Policy Service
+  policy-svc:
+    build:
+      context: ../services/policy-svc
+      dockerfile: Dockerfile
+    container_name: insurance-policy-svc
+    ports:
+      - "8001:8001"
+    environment:
+      - SERVICE_NAME=policy-svc
+      - SERVICE_PORT=8001
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - DYNAMODB_ENDPOINT_URL=http://localstack:4566
+      - POLICIES_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:policies-topic
+      - POLICIES_QUEUE_URL=http://localstack:4566/000000000000/policies-queue
+      - CLAIMS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:claims-topic
+      - CLAIMS_QUEUE_URL=http://localstack:4566/000000000000/claims-queue
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+    depends_on:
+      - localstack
+      - redis
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Claim Service
+  claim-svc:
+    build:
+      context: ../services/claim-svc
+      dockerfile: Dockerfile
+    container_name: insurance-claim-svc
+    ports:
+      - "8002:8002"
+    environment:
+      - SERVICE_NAME=claim-svc
+      - SERVICE_PORT=8002
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - DYNAMODB_ENDPOINT_URL=http://localstack:4566
+      - POLICIES_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:policies-topic
+      - POLICIES_QUEUE_URL=http://localstack:4566/000000000000/policies-queue
+      - CLAIMS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:claims-topic
+      - CLAIMS_QUEUE_URL=http://localstack:4566/000000000000/claims-queue
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+    depends_on:
+      - localstack
+      - redis
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Search Service
+  search-svc:
+    build:
+      context: ../services/search-svc
+      dockerfile: Dockerfile
+    container_name: insurance-search-svc
+    ports:
+      - "8005:8005"
+    environment:
+      - SERVICE_NAME=search-svc
+      - SERVICE_PORT=8005
+      - OPENSEARCH_ENDPOINT=http://opensearch:9200
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=admin
+      - OPENSEARCH_INDEX_PREFIX=ins
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+    depends_on:
+      - opensearch
+      - redis
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Gateway BFF (Optional)
+  gateway-bff:
+    build:
+      context: ../services/gateway-bff
+      dockerfile: Dockerfile
+    container_name: insurance-gateway-bff
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVICE_NAME=gateway-bff
+      - SERVICE_PORT=8000
+      - POLICY_SVC_URL=http://policy-svc:8001
+      - CLAIM_SVC_URL=http://claim-svc:8002
+      - SEARCH_SVC_URL=http://search-svc:8005
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+    depends_on:
+      - policy-svc
+      - claim-svc
+      - search-svc
+      - redis
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Auth Service (Stub)
+  auth-svc:
+    build:
+      context: ../services/auth-svc
+      dockerfile: Dockerfile
+    container_name: insurance-auth-svc
+    ports:
+      - "8003:8003"
+    environment:
+      - SERVICE_NAME=auth-svc
+      - SERVICE_PORT=8003
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ingest Service
+  ingest-svc:
+    build:
+      context: ../services/ingest-svc
+      dockerfile: Dockerfile
+    container_name: insurance-ingest-svc
+    ports:
+      - "8006:8006"
+    environment:
+      - SERVICE_NAME=ingest-svc
+      - SERVICE_PORT=8006
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - DYNAMODB_ENDPOINT_URL=http://localstack:4566
+      - POLICIES_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:policies-topic
+      - POLICIES_QUEUE_URL=http://localstack:4566/000000000000/policies-queue
+      - CLAIMS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:claims-topic
+      - CLAIMS_QUEUE_URL=http://localstack:4566/000000000000/claims-queue
+      - S3_ENDPOINT_URL=http://localstack:4566
+      - S3_BRONZE_BUCKET=ins-bronze
+      - S3_SILVER_BUCKET=ins-silver
+      - OPENSEARCH_ENDPOINT=http://opensearch:9200
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=admin
+      - OPENSEARCH_INDEX_PREFIX=ins
+      - LOG_LEVEL=INFO
+    depends_on:
+      - localstack
+      - opensearch
+    networks:
+      - insurance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  insurance-network:
+    driver: bridge
+
+volumes:
+  localstack-data:
+  opensearch-data:
+  redis-data:

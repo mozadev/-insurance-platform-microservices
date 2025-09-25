@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://events.ins/v1/PolicyCreated.json",
+  "type": "object",
+  "required": ["eventId", "eventType", "eventVersion", "occurredAt", "policy"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this event instance"
+    },
+    "eventType": {
+      "const": "PolicyCreated",
+      "description": "Type of the event"
+    },
+    "eventVersion": {
+      "const": 1,
+      "description": "Version of the event schema"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the event occurred"
+    },
+    "traceId": {
+      "type": "string",
+      "description": "OpenTelemetry trace ID for distributed tracing"
+    },
+    "policy": {
+      "type": "object",
+      "required": ["policyId", "customerId", "status", "premium", "effectiveDate", "expirationDate"],
+      "properties": {
+        "policyId": {
+          "type": "string",
+          "pattern": "^POL-[A-Z0-9]{8}$",
+          "description": "Unique policy identifier"
+        },
+        "customerId": {
+          "type": "string",
+          "pattern": "^CUST-[A-Z0-9]{8}$",
+          "description": "Customer identifier"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive", "cancelled", "expired"],
+          "description": "Current status of the policy"
+        },
+        "premium": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Annual premium amount in USD"
+        },
+        "effectiveDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Policy effective date"
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Policy expiration date"
+        },
+        "coverageType": {
+          "type": "string",
+          "enum": ["auto", "property", "health", "life", "other"],
+          "description": "Type of insurance coverage"
+        },
+        "deductible": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Policy deductible amount"
+        },
+        "coverageLimit": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum coverage amount"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
