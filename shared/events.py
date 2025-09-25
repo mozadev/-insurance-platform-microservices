@@ -88,7 +88,9 @@ class EventPublisher:
             return response.get("MessageId") is not None
 
         except Exception as e:
-            raise RuntimeError(f"Failed to publish event {event_type}: {str(e)}")
+            raise RuntimeError(
+                f"Failed to publish event {event_type}: {str(e)}"
+            ) from e
 
     def _get_current_trace_id(self) -> Optional[str]:
         """Get current OpenTelemetry trace ID."""
