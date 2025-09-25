@@ -39,20 +39,14 @@ jobs:
           registry: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
           aws: true
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push amd64 image
+      - name: Build and push amd64 image (classic builder)
         id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: services/ingest-svc/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:lambda-amd64-${{ github.sha }}
-          build-args: |
-            DOCKER_BUILDKIT=0
+        env:
+          IMAGE: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:lambda-amd64-${{ github.sha }}
+        run: |
+          echo "IMAGE=${IMAGE}" >> $GITHUB_OUTPUT
+          DOCKER_BUILDKIT=0 docker build --platform linux/amd64 -f services/ingest-svc/Dockerfile -t ${IMAGE} .
+          docker push ${IMAGE}
 
       - name: Export IMAGE_URI
         id: img
@@ -68,9 +62,7 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform Apply (update Lambda image)
-        env:
-          TF_VAR_lambda_image_uri: ${{ steps.img.outputs.IMAGE_URI }}
         working-directory: infra/terraform/envs/dev
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -auto-approve -input=false -var "lambda_image_uri=${{ steps.img.outputs.IMAGE_URI }}"
 
 
