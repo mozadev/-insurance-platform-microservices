@@ -84,13 +84,13 @@ class PolicyService(LoggerMixin):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Policy not found"
             )
-        
+
         if existing_policy.customer_id != customer_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied"
             )
-        
+
         # Update policy
         updated_policy = self.repository.update_policy(policy_id, update_data)
         if not updated_policy:
@@ -98,12 +98,12 @@ class PolicyService(LoggerMixin):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update policy"
             )
-        
+
         # Publish event
         updated_fields = list(update_data.dict(exclude_unset=True).keys())
         policy_dict = updated_policy.dict()
         self.event_publisher.publish_policy_updated(policy_dict, updated_fields)
-        
+
         return PolicyResponse(**policy_dict)
 
 
@@ -111,17 +111,17 @@ class PolicyService(LoggerMixin):
 def get_policy_service() -> PolicyService:
     """Get policy service instance."""
     # This would be injected via dependency injection in a real app
-    from ...shared.config import get_settings
     from ...shared.aws import get_dynamodb_client
-    from ..events.publisher import PolicyEventPublisher
+    from ...shared.config import get_settings
     from ..auth.jwt_stub import JWTStub
-    
+    from ..events.publisher import PolicyEventPublisher
+
     settings = get_settings()
     dynamodb = get_dynamodb_client(settings)
     repository = PolicyRepository(dynamodb, f"{settings.service_name}_policies")
     event_publisher = PolicyEventPublisher(settings)
     jwt_auth = JWTStub(settings)
-    
+
     return PolicyService(repository, event_publisher, jwt_auth)
 
 
@@ -129,17 +129,17 @@ def get_current_customer(credentials: HTTPAuthorizationCredentials = Depends(sec
     """Get current customer from JWT token."""
     from ...shared.config import get_settings
     from ..auth.jwt_stub import JWTStub
-    
+
     settings = get_settings()
     jwt_auth = JWTStub(settings)
-    
+
     customer_id = jwt_auth.verify_token(credentials.credentials)
     if not customer_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials"
         )
-    
+
     return customer_id
 
 
