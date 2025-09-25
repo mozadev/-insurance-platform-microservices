@@ -125,7 +125,7 @@ resource "aws_lambda_function" "this" {
 
   package_type = "Image"
   image_uri    = var.image_uri
-  architectures = ["arm64"]
+  architectures = ["x86_64"]
 
   timeout     = var.timeout_seconds
   memory_size = var.memory_mb
