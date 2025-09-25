@@ -1,6 +1,7 @@
 name: Deploy ingest-svc (Lambda container) - OIDC fix
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [ main ]
     paths:
