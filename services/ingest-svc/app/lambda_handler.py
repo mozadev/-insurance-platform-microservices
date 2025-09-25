@@ -78,7 +78,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """
     _ensure_logging()
     logger = get_logger(__name__)
-    logger.info("Lambda function started - deploy trigger")
+    logger.info("Lambda function started - pydantic fix trigger")
 
     settings = get_settings()
     s3 = get_s3_client(settings)
