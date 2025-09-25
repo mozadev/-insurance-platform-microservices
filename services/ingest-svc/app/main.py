@@ -62,7 +62,7 @@ async def readiness_check():
             raise RuntimeError("Worker not initialized")
         return {"status": "ready", "service": "ingest-svc"}
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Service not ready: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"Service not ready: {str(e)}") from e
 
 
 if __name__ == "__main__":

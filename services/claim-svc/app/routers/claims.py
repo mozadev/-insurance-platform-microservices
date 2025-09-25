@@ -190,7 +190,7 @@ async def create_claim(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create claim: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/{claim_id}", response_model=ClaimResponse)

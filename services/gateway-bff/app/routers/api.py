@@ -75,7 +75,7 @@ class GatewayService(LoggerMixin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to get dashboard: {str(e)}",
-            )
+            ) from e
 
     async def search_all(self, query: str, customer_id: str) -> dict[str, Any]:
         """Search across all services."""
@@ -96,7 +96,7 @@ class GatewayService(LoggerMixin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Search failed: {str(e)}",
-            )
+            ) from e
 
 
 # Dependency injection
@@ -177,7 +177,7 @@ async def get_claims(
     service: GatewayService = Depends(get_gateway_service),
 ):
     """Get customer claims."""
-    claim_client = service.claim_client
+    _ = service.claim_client
     # This would need to be implemented in claim service
     return {"claims": [], "total": 0}
 

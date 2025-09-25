@@ -63,7 +63,7 @@ class IdempotencyManager(LoggerMixin):
                 self.logger.error(
                     "Failed to store idempotency key", error=str(e), key=key
                 )
-                raise RuntimeError(f"Failed to store idempotency key: {str(e)}")
+                raise RuntimeError(f"Failed to store idempotency key: {str(e)}") from e
 
     def get_response(
         self, idempotency_key: str, request_data: dict[str, Any]

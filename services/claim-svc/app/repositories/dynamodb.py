@@ -59,7 +59,7 @@ class ClaimRepository(LoggerMixin):
 
         except ClientError as e:
             self.logger.error("Failed to create claim", error=str(e), claim_id=claim_id)
-            raise RuntimeError(f"Failed to create claim: {str(e)}")
+            raise RuntimeError(f"Failed to create claim: {str(e)}") from e
 
     def get_claim(self, claim_id: str) -> Claim | None:
         """Get a claim by ID."""
@@ -144,7 +144,7 @@ class ClaimRepository(LoggerMixin):
             self.logger.error(
                 "Failed to get policy claims", error=str(e), policy_id=policy_id
             )
-            raise RuntimeError(f"Failed to get policy claims: {str(e)}")
+            raise RuntimeError(f"Failed to get policy claims: {str(e)}") from e
 
     def update_claim(self, claim_id: str, update_data: ClaimUpdate) -> Claim | None:
         """Update a claim."""
@@ -192,4 +192,4 @@ class ClaimRepository(LoggerMixin):
 
         except ClientError as e:
             self.logger.error("Failed to update claim", error=str(e), claim_id=claim_id)
-            raise RuntimeError(f"Failed to update claim: {str(e)}")
+            raise RuntimeError(f"Failed to update claim: {str(e)}") from e

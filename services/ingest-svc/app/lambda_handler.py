@@ -88,7 +88,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     records: list[dict[str, Any]] = event.get("Records", [])
     for record in records:
-        receipt_handle = record.get("receiptHandle") or record.get("receipt_handle")
+        _ = record.get("receiptHandle") or record.get("receipt_handle")
         try:
             body = record.get("body")
             sqs_body = json.loads(body) if isinstance(body, str) else (body or {})
