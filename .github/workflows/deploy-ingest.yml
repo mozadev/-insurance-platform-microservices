@@ -51,6 +51,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:lambda-amd64-${{ github.sha }}
+          build-args: |
+            DOCKER_BUILDKIT=0
 
       - name: Export IMAGE_URI
         id: img
