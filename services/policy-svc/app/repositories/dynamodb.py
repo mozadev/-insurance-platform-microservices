@@ -60,7 +60,7 @@ class PolicyRepository(LoggerMixin):
             
         except ClientError as e:
             self.logger.error("Failed to create policy", error=str(e), policy_id=policy_id)
-            raise RuntimeError(f"Failed to create policy: {str(e)}")
+            raise RuntimeError(f"Failed to create policy: {str(e)}") from e
     
     def get_policy(self, policy_id: str) -> Optional[Policy]:
         """Get a policy by ID."""
@@ -148,7 +148,7 @@ class PolicyRepository(LoggerMixin):
             
         except ClientError as e:
             self.logger.error("Failed to get customer policies", error=str(e), customer_id=customer_id)
-            raise RuntimeError(f"Failed to get customer policies: {str(e)}")
+            raise RuntimeError(f"Failed to get customer policies: {str(e)}") from e
     
     def update_policy(self, policy_id: str, update_data: PolicyUpdate) -> Optional[Policy]:
         """Update a policy."""
@@ -197,4 +197,4 @@ class PolicyRepository(LoggerMixin):
             
         except ClientError as e:
             self.logger.error("Failed to update policy", error=str(e), policy_id=policy_id)
-            raise RuntimeError(f"Failed to update policy: {str(e)}")
+            raise RuntimeError(f"Failed to update policy: {str(e)}") from e

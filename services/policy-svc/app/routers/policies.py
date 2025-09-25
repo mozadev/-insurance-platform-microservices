@@ -156,7 +156,7 @@ async def create_policy(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create policy: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/{policy_id}", response_model=PolicyResponse)

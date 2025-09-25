@@ -92,7 +92,7 @@ async def readiness_check():
         
         return {"status": "ready", "service": "policy-svc"}
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Service not ready: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"Service not ready: {str(e)}") from e
 
 
 if __name__ == "__main__":
