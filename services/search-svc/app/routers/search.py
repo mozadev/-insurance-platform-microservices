@@ -41,7 +41,7 @@ class SearchService(LoggerMixin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Search failed: {str(e)}"
-            )
+            ) from e
     
     def index_document(self, document: IndexDocument) -> bool:
         """Index a single document."""
@@ -52,7 +52,7 @@ class SearchService(LoggerMixin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to index document: {str(e)}"
-            )
+            ) from e
     
     def bulk_index(self, documents: list[IndexDocument]) -> Dict[str, int]:
         """Bulk index multiple documents."""

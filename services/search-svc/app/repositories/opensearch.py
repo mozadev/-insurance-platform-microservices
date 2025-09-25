@@ -184,7 +184,7 @@ class SearchRepository(LoggerMixin):
             
         except exceptions.OpenSearchException as e:
             self.logger.error("OpenSearch search failed", error=str(e), query=query)
-            raise RuntimeError(f"Search failed: {str(e)}")
+            raise RuntimeError(f"Search failed: {str(e)}") from e
     
     def index_document(self, document: IndexDocument) -> bool:
         """Index a single document."""
