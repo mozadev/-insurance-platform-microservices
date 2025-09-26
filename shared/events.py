@@ -17,6 +17,13 @@ class EventValidator:
         self.contracts_dir = Path(contracts_dir)
         self._schemas: Dict[str, Dict[str, Any]] = {}
         self._load_schemas()
+        
+        # Debug: Log what schemas were loaded
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Loaded schemas: {list(self._schemas.keys())}")
+        logger.info(f"Contracts dir: {self.contracts_dir}")
+        logger.info(f"Contracts dir exists: {self.contracts_dir.exists()}")
 
     def _load_schemas(self) -> None:
         """Load all event schemas from contracts directory."""
