@@ -70,22 +70,15 @@ def get_s3_client(settings: Settings):
 def get_opensearch_client(settings: Settings):
     """Get OpenSearch client with proper configuration.
 
-    For OpenSearch Serverless, use SigV4 authentication with the Lambda's IAM role.
+    For OpenSearch classic, use username/password authentication.
     """
-    from opensearchpy import OpenSearch, AWSV4SignerAuth, RequestsHttpConnection
-
-    session = boto3.Session()
-    creds = session.get_credentials()
-    frozen = creds.get_frozen_credentials() if creds is not None else None
-    auth = AWSV4SignerAuth(frozen, settings.aws_region, service="aoss")
-
-    parsed = urlparse(str(settings.opensearch_endpoint))
-    host = parsed.hostname or str(settings.opensearch_endpoint)
+    from opensearchpy import OpenSearch
 
     return OpenSearch(
-        hosts=[{"host": host, "port": 443}],
-        http_auth=auth,
+        hosts=[settings.opensearch_endpoint],
+        http_auth=(settings.opensearch_username, settings.opensearch_password),
         use_ssl=True,
         verify_certs=True,
-        connection_class=RequestsHttpConnection,
+        ssl_assert_hostname=False,
+        ssl_show_warn=False,
     )

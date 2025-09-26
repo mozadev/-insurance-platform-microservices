@@ -82,7 +82,7 @@ module "messaging" {
 
 # OpenSearch Serverless Module
 module "opensearch" {
-  source = "../../modules/opensearch_serverless"
+  source = "../../modules/opensearch"
 
   name        = "ins-${var.environment}"
   environment = var.environment
@@ -99,14 +99,14 @@ module "ingest_lambda" {
   queue_arns              = [module.messaging.policies_queue_arn, module.messaging.claims_queue_arn]
   s3_bronze_bucket        = module.storage.bronze_bucket_name
   s3_silver_bucket        = module.storage.silver_bucket_name
-  opensearch_domain_arn   = module.opensearch.collection_arn
+  opensearch_domain_arn   = module.opensearch.domain_arn
 
   environment = {
     SERVICE_NAME              = "ingest-svc"
     SERVICE_PORT              = "8000"
     LOG_LEVEL                 = "INFO"
     OPENSEARCH_INDEX_PREFIX   = "ins"
-    OPENSEARCH_ENDPOINT       = module.opensearch.collection_endpoint
+    OPENSEARCH_ENDPOINT       = module.opensearch.domain_endpoint
     S3_BRONZE_BUCKET          = module.storage.bronze_bucket_name
     S3_SILVER_BUCKET          = module.storage.silver_bucket_name
     POLICIES_TOPIC_ARN        = module.messaging.policies_topic_arn
@@ -178,13 +178,13 @@ output "claims_queue_url" {
 }
 
 output "opensearch_domain_endpoint" {
-  value       = module.opensearch.collection_endpoint
-  description = "OpenSearch Serverless collection endpoint"
+  value       = module.opensearch.domain_endpoint
+  description = "OpenSearch domain endpoint"
 }
 
-output "opensearch_dashboard_endpoint" {
-  value       = module.opensearch.dashboard_endpoint
-  description = "OpenSearch Dashboards endpoint"
+output "opensearch_kibana_endpoint" {
+  value       = module.opensearch.kibana_endpoint
+  description = "OpenSearch Kibana endpoint"
 }
 
 output "ingest_lambda_arn" {
