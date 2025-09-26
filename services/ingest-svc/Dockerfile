@@ -7,6 +7,7 @@ RUN pip install --upgrade pip && pip install fastapi uvicorn boto3 opensearch-py
 # Copy application code
 COPY services/ingest-svc/app ${LAMBDA_TASK_ROOT}/app
 COPY shared ${LAMBDA_TASK_ROOT}/shared
+COPY contracts ${LAMBDA_TASK_ROOT}/contracts
 
 # Set the CMD to your handler
 CMD ["app.lambda_handler.handler"]
