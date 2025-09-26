@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     # AWS Configuration
     aws_region: str = Field(default="us-east-1", env="AWS_REGION")
     aws_endpoint_url: Optional[str] = Field(default=None, env="AWS_ENDPOINT_URL")
-    aws_access_key_id: str = Field(default="test", env="AWS_ACCESS_KEY_ID")
-    aws_secret_access_key: str = Field(default="test", env="AWS_SECRET_ACCESS_KEY")
+    aws_access_key_id: Optional[str] = Field(default=None, env="AWS_ACCESS_KEY_ID")
+    aws_secret_access_key: Optional[str] = Field(default=None, env="AWS_SECRET_ACCESS_KEY")
 
     # Service Configuration
     service_name: str = Field(..., env="SERVICE_NAME")

@@ -58,13 +58,22 @@ def get_s3_client(settings: Settings):
         region_name=settings.aws_region, retries={"max_attempts": 3, "mode": "adaptive"}
     )
 
-    return boto3.client(
-        "s3",
-        endpoint_url=settings.s3_endpoint_url,
-        aws_access_key_id=settings.aws_access_key_id,
-        aws_secret_access_key=settings.aws_secret_access_key,
-        config=config,
-    )
+    # In Lambda, use IAM role instead of explicit credentials
+    if settings.aws_access_key_id and settings.aws_secret_access_key:
+        return boto3.client(
+            "s3",
+            endpoint_url=settings.s3_endpoint_url,
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
+            config=config,
+        )
+    else:
+        # Use IAM role (recommended for Lambda)
+        return boto3.client(
+            "s3",
+            endpoint_url=settings.s3_endpoint_url,
+            config=config,
+        )
 
 
 def get_opensearch_client(settings: Settings):
