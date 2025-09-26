@@ -103,11 +103,16 @@ module "ingest_lambda" {
 
   environment = {
     SERVICE_NAME              = "ingest-svc"
+    SERVICE_PORT              = "8000"
     LOG_LEVEL                 = "INFO"
     OPENSEARCH_INDEX_PREFIX   = "ins"
     OPENSEARCH_ENDPOINT       = module.opensearch.collection_endpoint
     S3_BRONZE_BUCKET          = module.storage.bronze_bucket_name
     S3_SILVER_BUCKET          = module.storage.silver_bucket_name
+    POLICIES_TOPIC_ARN        = module.messaging.policies_topic_arn
+    CLAIMS_TOPIC_ARN          = module.messaging.claims_topic_arn
+    POLICIES_QUEUE_URL        = module.messaging.policies_queue_url
+    CLAIMS_QUEUE_URL          = module.messaging.claims_queue_url
   }
 
   timeout_seconds                        = 30
