@@ -63,6 +63,6 @@ jobs:
 
       - name: Terraform Apply (update Lambda image)
         working-directory: infra/terraform/envs/dev
-        run: terraform apply -auto-approve -input=false -var "lambda_image_uri=${{ steps.img.outputs.IMAGE_URI }}"
+        run: terraform apply -auto-approve -input=false -var "lambda_image_uri=${{ steps.img.outputs.IMAGE_URI }}" -var "opensearch_master_password=${{ secrets.OPENSEARCH_MASTER_PASSWORD }}"
 
 
