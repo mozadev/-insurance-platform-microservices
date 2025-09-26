@@ -1,0 +1,18 @@
+# Variables efectivamente usadas por el root module
+
+# Entorno y región
+environment = "dev"
+aws_region  = "us-east-1"
+
+# Lambda image URI
+lambda_image_uri = "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/ins-dev-ingest-svc:latest"
+
+# OpenSearch master password - set via TF_VAR_opensearch_master_password
+# opensearch_master_password = "YOUR_SECURE_PASSWORD"
+
+# Tags
+tags = {
+  Environment = "dev"
+  Project     = "insurance-platform"
+  Owner       = "your-team"
+}
