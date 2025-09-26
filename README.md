@@ -251,3 +251,4 @@ aws --endpoint-url=http://localhost:4566 dynamodb list-tables
 aws --endpoint-url=http://localhost:4566 sns list-topics
 aws --endpoint-url=http://localhost:4566 sqs list-queues
 ```
+# Force deploy
