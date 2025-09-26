@@ -2,6 +2,7 @@
 
 import boto3
 from botocore.config import Config
+from urllib.parse import urlparse
 
 from .config import Settings
 
