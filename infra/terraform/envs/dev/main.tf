@@ -36,11 +36,11 @@ variable "lambda_image_uri" {
   description = "ECR image URI for Lambda"
 }
 
-# variable "opensearch_master_password" {
-#   type        = string
-#   description = "OpenSearch master password"
-#   sensitive   = true
-# }
+variable "opensearch_master_password" {
+  type        = string
+  description = "OpenSearch master password"
+  sensitive   = true
+}
 
 variable "tags" {
   type        = map(string)
@@ -87,6 +87,11 @@ module "opensearch" {
   name        = "ins-${var.environment}"
   environment = var.environment
   tags        = var.tags
+  
+  aws_region            = var.aws_region
+  subnet_ids            = module.networking.private_subnet_ids
+  security_group_ids    = [module.networking.opensearch_security_group_id]
+  master_user_password  = var.opensearch_master_password
 }
 
 # Ingest Lambda Module
@@ -107,6 +112,8 @@ module "ingest_lambda" {
     LOG_LEVEL                 = "INFO"
     OPENSEARCH_INDEX_PREFIX   = "ins"
     OPENSEARCH_ENDPOINT       = module.opensearch.domain_endpoint
+    OPENSEARCH_USERNAME       = "admin"
+    OPENSEARCH_PASSWORD       = var.opensearch_master_password
     S3_BRONZE_BUCKET          = module.storage.bronze_bucket_name
     S3_SILVER_BUCKET          = module.storage.silver_bucket_name
     POLICIES_TOPIC_ARN        = module.messaging.policies_topic_arn
