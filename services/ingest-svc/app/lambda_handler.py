@@ -78,7 +78,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """
     _ensure_logging()
     logger = get_logger(__name__)
-    logger.info("Lambda function started - IAM role fix trigger")
+    logger.info("Lambda function started - FORCE IAM ROLE TEST")
 
     settings = get_settings()
     s3 = get_s3_client(settings)
