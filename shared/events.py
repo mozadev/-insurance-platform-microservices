@@ -36,6 +36,9 @@ class EventValidator:
         """Validate an event against its schema."""
         event_type = event.get("eventType")
         if not event_type or event_type not in self._schemas:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Event type {event_type} not found in schemas. Available: {list(self._schemas.keys())}")
             return False
 
         try:
@@ -46,6 +49,7 @@ class EventValidator:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Validation error for {event_type}: {e.message}")
+            logger.error(f"Event data: {event}")
             return False
 
 
