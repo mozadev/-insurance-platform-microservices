@@ -58,8 +58,14 @@ def get_s3_client(settings: Settings):
         region_name=settings.aws_region, retries={"max_attempts": 3, "mode": "adaptive"}
     )
 
+    # Debug logging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"S3 client config - access_key_id: {settings.aws_access_key_id}, secret_key: {settings.aws_secret_access_key}")
+
     # In Lambda, use IAM role instead of explicit credentials
     if settings.aws_access_key_id and settings.aws_secret_access_key:
+        logger.info("Using explicit credentials for S3")
         return boto3.client(
             "s3",
             endpoint_url=settings.s3_endpoint_url,
@@ -69,6 +75,7 @@ def get_s3_client(settings: Settings):
         )
     else:
         # Use IAM role (recommended for Lambda)
+        logger.info("Using IAM role for S3")
         return boto3.client(
             "s3",
             endpoint_url=settings.s3_endpoint_url,
