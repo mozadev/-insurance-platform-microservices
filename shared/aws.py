@@ -75,11 +75,10 @@ def get_opensearch_client(settings: Settings):
     from opensearchpy import OpenSearch, AWSV4SignerAuth, RequestsHttpConnection
 
     session = boto3.Session()
-    credentials = session.get_credentials()
-    # IMPORTANT: AOSS requires service name 'aoss' for SigV4
-    auth = AWSV4SignerAuth(credentials, settings.aws_region, service="aoss")
+    creds = session.get_credentials()
+    frozen = creds.get_frozen_credentials() if creds is not None else None
+    auth = AWSV4SignerAuth(frozen, settings.aws_region, service="aoss")
 
-    # settings.opensearch_endpoint is a full https URL for Serverless
     parsed = urlparse(str(settings.opensearch_endpoint))
     host = parsed.hostname or str(settings.opensearch_endpoint)
 
