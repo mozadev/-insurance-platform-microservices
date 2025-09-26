@@ -41,7 +41,11 @@ class EventValidator:
         try:
             jsonschema.validate(event, self._schemas[event_type])
             return True
-        except jsonschema.ValidationError:
+        except jsonschema.ValidationError as e:
+            # Log validation error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Validation error for {event_type}: {e.message}")
             return False
 
 
