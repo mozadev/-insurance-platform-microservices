@@ -71,8 +71,7 @@ def get_opensearch_client(settings: Settings):
 
     For OpenSearch Serverless, use SigV4 authentication with the Lambda's IAM role.
     """
-    from urllib.parse import urlparse
-    from opensearchpy import AWSV4SignerAuth, RequestsHttpConnection
+    from opensearchpy import OpenSearch, AWSV4SignerAuth, RequestsHttpConnection
 
     session = boto3.Session()
     credentials = session.get_credentials()
