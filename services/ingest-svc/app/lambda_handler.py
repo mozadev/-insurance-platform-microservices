@@ -102,7 +102,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             event_type = domain_event.get("eventType")
             # Persist bronze
             if event_type.startswith("Policy"):
-                # Ensure OpenSearch index exists
+                # Try to ensure OpenSearch index exists (optional - graceful degradation)
                 try:
                     resp = opensearch.transport.perform_request("GET", "/ins-policies")
                     logger.info(f"OpenSearch GET /ins-policies status={resp.get('status', 'ok')}")
@@ -129,7 +129,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                         )
                         logger.info("OpenSearch PUT /ins-policies - index created")
                     except Exception as e2:
-                        logger.error(f"OpenSearch PUT /ins-policies failed: {e2}")
+                        logger.warning(f"OpenSearch PUT /ins-policies failed: {e2} - continuing with S3 only")
 
                 key = f"policies/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -154,7 +154,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                         )
                         logger.info(f"Indexed policy {doc_id} to OpenSearch")
                     except Exception as e:
-                        logger.error(f"Failed to index policy {doc_id} to OpenSearch: {e}")
+                        logger.warning(f"Failed to index policy {doc_id} to OpenSearch: {e} - continuing with S3 only")
             elif event_type.startswith("Claim"):
                 key = f"claims/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -179,7 +179,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                         )
                         logger.info(f"Indexed claim {doc_id} to OpenSearch")
                     except Exception as e:
-                        logger.error(f"Failed to index claim {doc_id} to OpenSearch: {e}")
+                        logger.warning(f"Failed to index claim {doc_id} to OpenSearch: {e} - continuing with S3 only")
 
         except Exception as e:
             logger.error("Record processing failed", error=str(e))
