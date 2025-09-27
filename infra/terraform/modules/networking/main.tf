@@ -165,6 +165,15 @@ resource "aws_security_group" "opensearch" {
     cidr_blocks = [var.vpc_cidr]
   }
 
+  # Allow Lambda to access OpenSearch
+  ingress {
+    from_port                = 443
+    to_port                  = 443
+    protocol                 = "tcp"
+    source_security_group_id = aws_security_group.lambda.id
+    description              = "Allow Lambda to access OpenSearch"
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
