@@ -71,7 +71,7 @@ resource "aws_opensearch_domain" "main" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = var.lambda_role_arns
+          AWS = "*"
         }
         Action = [
           "es:ESHttpGet",
