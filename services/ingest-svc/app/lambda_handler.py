@@ -102,34 +102,35 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             event_type = domain_event.get("eventType")
             # Persist bronze
             if event_type.startswith("Policy"):
-                # TEMP: probe OpenSearch index and attempt create if missing
-                try:
-                    resp = opensearch.transport.perform_request("GET", "/ins-policies")
-                    logger.info(f"AOSS GET /ins-policies status={resp.get('status', 'ok')}")
-                except Exception as e:
-                    logger.warning(f"AOSS GET /ins-policies failed: {e}")
-                    try:
-                        create_body = {
-                            "mappings": {
-                                "properties": {
-                                    "policyId": {"type": "keyword"},
-                                    "customerId": {"type": "keyword"},
-                                    "status": {"type": "keyword"},
-                                    "premium": {"type": "float"},
-                                    "effectiveDate": {"type": "date"},
-                                    "expirationDate": {"type": "date"},
-                                    "coverageType": {"type": "keyword"},
-                                    "deductible": {"type": "float"},
-                                    "coverageLimit": {"type": "float"}
-                                }
-                            }
-                        }
-                        _ = opensearch.transport.perform_request(
-                            "PUT", "/ins-policies", body=create_body
-                        )
-                        logger.info("AOSS PUT /ins-policies attempted")
-                    except Exception as e2:
-                        logger.error(f"AOSS PUT /ins-policies failed: {e2}")
+                # TEMP: Disable OpenSearch probe to focus on S3
+                # try:
+                #     resp = opensearch.transport.perform_request("GET", "/ins-policies")
+                #     logger.info(f"AOSS GET /ins-policies status={resp.get('status', 'ok')}")
+                # except Exception as e:
+                #     logger.warning(f"AOSS GET /ins-policies failed: {e}")
+                #     try:
+                #         create_body = {
+                #             "mappings": {
+                #                 "properties": {
+                #                     "policyId": {"type": "keyword"},
+                #                     "customerId": {"type": "keyword"},
+                #                     "status": {"type": "keyword"},
+                #                     "premium": {"type": "float"},
+                #                     "effectiveDate": {"type": "date"},
+                #                     "expirationDate": {"type": "date"},
+                #                     "coverageType": {"type": "keyword"},
+                #                     "deductible": {"type": "float"},
+                #                     "coverageLimit": {"type": "float"}
+                #                 }
+                #             }
+                #         }
+                #         _ = opensearch.transport.perform_request(
+                #             "PUT", "/ins-policies", body=create_body
+                #         )
+                #         logger.info("AOSS PUT /ins-policies attempted")
+                #     except Exception as e2:
+                #         logger.error(f"AOSS PUT /ins-policies failed: {e2}")
+                logger.info("Skipping OpenSearch probe - focusing on S3")
 
                 key = f"policies/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
