@@ -36,10 +36,10 @@ resource "aws_opensearch_domain" "main" {
     volume_size = var.volume_size
   }
 
-  vpc_options {
-    subnet_ids         = var.subnet_ids
-    security_group_ids = var.security_group_ids
-  }
+  # vpc_options {
+  #   subnet_ids         = var.subnet_ids
+  #   security_group_ids = var.security_group_ids
+  # }
 
   encrypt_at_rest {
     enabled = true
