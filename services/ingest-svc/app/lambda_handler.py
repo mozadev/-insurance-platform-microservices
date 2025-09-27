@@ -147,11 +147,13 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 doc_id = policy.get("policy_id") or policy.get("policyId")
                 if doc_id:
                     doc = _normalize_policy(policy)
-                    opensearch.index(
-                        index=f"{settings.opensearch_index_prefix}-policies",
-                        id=doc_id,
-                        body=doc,
-                    )
+                    # TEMP: Disable OpenSearch indexing
+                    # opensearch.index(
+                    #     index=f"{settings.opensearch_index_prefix}-policies",
+                    #     id=doc_id,
+                    #     body=doc,
+                    # )
+                    logger.info(f"Would index policy {doc_id} to OpenSearch")
             elif event_type.startswith("Claim"):
                 key = f"claims/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -168,11 +170,13 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 doc_id = claim.get("claim_id") or claim.get("claimId")
                 if doc_id:
                     doc = _normalize_claim(claim)
-                    opensearch.index(
-                        index=f"{settings.opensearch_index_prefix}-claims",
-                        id=doc_id,
-                        body=doc,
-                    )
+                    # TEMP: Disable OpenSearch indexing
+                    # opensearch.index(
+                    #     index=f"{settings.opensearch_index_prefix}-claims",
+                    #     id=doc_id,
+                    #     body=doc,
+                    # )
+                    logger.info(f"Would index claim {doc_id} to OpenSearch")
 
         except Exception as e:
             logger.error("Record processing failed", error=str(e))
