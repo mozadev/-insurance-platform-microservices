@@ -129,7 +129,7 @@ module "ingest_lambda" {
   maximum_batching_window_in_seconds     = 1
   maximum_concurrency                    = 5
   maximum_retry_attempts                 = 2
-  # create_vpc_config                      = true  # Temporarily disabled for debugging
+  create_vpc_config                      = true
   subnet_ids                             = module.networking.private_subnet_ids
   security_group_ids                     = [module.networking.lambda_security_group_id]
   enable_xray                            = true
