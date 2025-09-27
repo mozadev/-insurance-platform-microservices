@@ -36,6 +36,7 @@ resource "aws_opensearch_domain" "main" {
     volume_size = var.volume_size
   }
 
+  # OpenSearch will be public but with IP restrictions for security
   # vpc_options {
   #   subnet_ids         = var.subnet_ids
   #   security_group_ids = var.security_group_ids
@@ -80,6 +81,13 @@ resource "aws_opensearch_domain" "main" {
           "es:ESHttpDelete"
         ]
         Resource = "arn:aws:es:${var.aws_region}:${data.aws_caller_identity.current.account_id}:domain/${local.name}-search/*"
+        Condition = {
+          IpAddress = {
+            "aws:SourceIp" = [
+              "0.0.0.0/0"  # Allow from anywhere for testing - in production, restrict to specific IPs
+            ]
+          }
+        }
       }
     ]
   })

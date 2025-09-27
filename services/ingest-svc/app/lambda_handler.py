@@ -82,7 +82,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     settings = get_settings()
     s3 = get_s3_client(settings)
-    # opensearch = get_opensearch_client(settings)  # TEMP: Disabled for S3-only flow
+    opensearch = get_opensearch_client(settings)
     validator = EventValidator()
 
     failures: list[dict[str, str]] = []
@@ -102,35 +102,34 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             event_type = domain_event.get("eventType")
             # Persist bronze
             if event_type.startswith("Policy"):
-                # TEMP: Disable OpenSearch probe to focus on S3
-                # try:
-                #     resp = opensearch.transport.perform_request("GET", "/ins-policies")
-                #     logger.info(f"AOSS GET /ins-policies status={resp.get('status', 'ok')}")
-                # except Exception as e:
-                #     logger.warning(f"AOSS GET /ins-policies failed: {e}")
-                #     try:
-                #         create_body = {
-                #             "mappings": {
-                #                 "properties": {
-                #                     "policyId": {"type": "keyword"},
-                #                     "customerId": {"type": "keyword"},
-                #                     "status": {"type": "keyword"},
-                #                     "premium": {"type": "float"},
-                #                     "effectiveDate": {"type": "date"},
-                #                     "expirationDate": {"type": "date"},
-                #                     "coverageType": {"type": "keyword"},
-                #                     "deductible": {"type": "float"},
-                #                     "coverageLimit": {"type": "float"}
-                #                 }
-                #             }
-                #         }
-                #         _ = opensearch.transport.perform_request(
-                #             "PUT", "/ins-policies", body=create_body
-                #         )
-                #         logger.info("AOSS PUT /ins-policies attempted")
-                #     except Exception as e2:
-                #         logger.error(f"AOSS PUT /ins-policies failed: {e2}")
-                logger.info("Skipping OpenSearch probe - focusing on S3")
+                # Ensure OpenSearch index exists
+                try:
+                    resp = opensearch.transport.perform_request("GET", "/ins-policies")
+                    logger.info(f"OpenSearch GET /ins-policies status={resp.get('status', 'ok')}")
+                except Exception as e:
+                    logger.warning(f"OpenSearch GET /ins-policies failed: {e}")
+                    try:
+                        create_body = {
+                            "mappings": {
+                                "properties": {
+                                    "policyId": {"type": "keyword"},
+                                    "customerId": {"type": "keyword"},
+                                    "status": {"type": "keyword"},
+                                    "premium": {"type": "float"},
+                                    "effectiveDate": {"type": "date"},
+                                    "expirationDate": {"type": "date"},
+                                    "coverageType": {"type": "keyword"},
+                                    "deductible": {"type": "float"},
+                                    "coverageLimit": {"type": "float"}
+                                }
+                            }
+                        }
+                        _ = opensearch.transport.perform_request(
+                            "PUT", "/ins-policies", body=create_body
+                        )
+                        logger.info("OpenSearch PUT /ins-policies - index created")
+                    except Exception as e2:
+                        logger.error(f"OpenSearch PUT /ins-policies failed: {e2}")
 
                 key = f"policies/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -146,14 +145,16 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 )
                 doc_id = policy.get("policy_id") or policy.get("policyId")
                 if doc_id:
-                    # TEMP: Disable OpenSearch indexing - focus on S3 only
-                    # doc = _normalize_policy(policy)
-                    # opensearch.index(
-                    #     index=f"{settings.opensearch_index_prefix}-policies",
-                    #     id=doc_id,
-                    #     body=doc,
-                    # )
-                    logger.info(f"Would index policy {doc_id} to OpenSearch (disabled)")
+                    doc = _normalize_policy(policy)
+                    try:
+                        opensearch.index(
+                            index=f"{settings.opensearch_index_prefix}-policies",
+                            id=doc_id,
+                            body=doc,
+                        )
+                        logger.info(f"Indexed policy {doc_id} to OpenSearch")
+                    except Exception as e:
+                        logger.error(f"Failed to index policy {doc_id} to OpenSearch: {e}")
             elif event_type.startswith("Claim"):
                 key = f"claims/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -169,14 +170,16 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 )
                 doc_id = claim.get("claim_id") or claim.get("claimId")
                 if doc_id:
-                    # TEMP: Disable OpenSearch indexing - focus on S3 only
-                    # doc = _normalize_claim(claim)
-                    # opensearch.index(
-                    #     index=f"{settings.opensearch_index_prefix}-claims",
-                    #     id=doc_id,
-                    #     body=doc,
-                    # )
-                    logger.info(f"Would index claim {doc_id} to OpenSearch (disabled)")
+                    doc = _normalize_claim(claim)
+                    try:
+                        opensearch.index(
+                            index=f"{settings.opensearch_index_prefix}-claims",
+                            id=doc_id,
+                            body=doc,
+                        )
+                        logger.info(f"Indexed claim {doc_id} to OpenSearch")
+                    except Exception as e:
+                        logger.error(f"Failed to index claim {doc_id} to OpenSearch: {e}")
 
         except Exception as e:
             logger.error("Record processing failed", error=str(e))
