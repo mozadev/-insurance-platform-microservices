@@ -123,7 +123,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                     doc = _normalize_policy(policy)
                     try:
                         elasticsearch.index(
-                            index=f"{settings.opensearch_index_prefix}-policies",
+                            index=f"{settings.elasticsearch_index_prefix}-policies",
                             id=doc_id,
                             body=doc,
                             timeout=5
@@ -149,7 +149,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                     doc = _normalize_claim(claim)
                     try:
                         elasticsearch.index(
-                            index=f"{settings.opensearch_index_prefix}-claims",
+                            index=f"{settings.elasticsearch_index_prefix}-claims",
                             id=doc_id,
                             body=doc,
                             timeout=5
