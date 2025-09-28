@@ -103,33 +103,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             # Persist bronze
             if event_type.startswith("Policy"):
                 # Try to ensure OpenSearch index exists (optional - graceful degradation)
-                try:
-                    resp = opensearch.transport.perform_request("GET", "/ins-policies")
-                    logger.info(f"OpenSearch GET /ins-policies status={resp.get('status', 'ok')}")
-                except Exception as e:
-                    logger.warning(f"OpenSearch GET /ins-policies failed: {e}")
-                    try:
-                        create_body = {
-                            "mappings": {
-                                "properties": {
-                                    "policyId": {"type": "keyword"},
-                                    "customerId": {"type": "keyword"},
-                                    "status": {"type": "keyword"},
-                                    "premium": {"type": "float"},
-                                    "effectiveDate": {"type": "date"},
-                                    "expirationDate": {"type": "date"},
-                                    "coverageType": {"type": "keyword"},
-                                    "deductible": {"type": "float"},
-                                    "coverageLimit": {"type": "float"}
-                                }
-                            }
-                        }
-                        _ = opensearch.transport.perform_request(
-                            "PUT", "/ins-policies", body=create_body
-                        )
-                        logger.info("OpenSearch PUT /ins-policies - index created")
-                    except Exception as e2:
-                        logger.warning(f"OpenSearch PUT /ins-policies failed: {e2} - continuing with S3 only")
+                # Skip OpenSearch probe to avoid timeouts - focus on S3 reliability
+                logger.info("Skipping OpenSearch probe - focusing on S3 reliability")
 
                 key = f"policies/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -146,15 +121,18 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 doc_id = policy.get("policy_id") or policy.get("policyId")
                 if doc_id:
                     doc = _normalize_policy(policy)
+                    # Try OpenSearch with short timeout - graceful degradation
                     try:
+                        # Set a short timeout to avoid Lambda timeouts
                         opensearch.index(
                             index=f"{settings.opensearch_index_prefix}-policies",
                             id=doc_id,
                             body=doc,
+                            timeout="5s"  # Short timeout
                         )
                         logger.info(f"Indexed policy {doc_id} to OpenSearch")
                     except Exception as e:
-                        logger.warning(f"Failed to index policy {doc_id} to OpenSearch: {e} - continuing with S3 only")
+                        logger.warning(f"OpenSearch indexing failed for policy {doc_id}: {e} - S3 storage successful")
             elif event_type.startswith("Claim"):
                 key = f"claims/bronze/{event_type}/{domain_event['eventId']}.json"
                 s3.put_object(
@@ -171,15 +149,18 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 doc_id = claim.get("claim_id") or claim.get("claimId")
                 if doc_id:
                     doc = _normalize_claim(claim)
+                    # Try OpenSearch with short timeout - graceful degradation
                     try:
+                        # Set a short timeout to avoid Lambda timeouts
                         opensearch.index(
                             index=f"{settings.opensearch_index_prefix}-claims",
                             id=doc_id,
                             body=doc,
+                            timeout="5s"  # Short timeout
                         )
                         logger.info(f"Indexed claim {doc_id} to OpenSearch")
                     except Exception as e:
-                        logger.warning(f"Failed to index claim {doc_id} to OpenSearch: {e} - continuing with S3 only")
+                        logger.warning(f"OpenSearch indexing failed for claim {doc_id}: {e} - S3 storage successful")
 
         except Exception as e:
             logger.error("Record processing failed", error=str(e))
