@@ -70,13 +70,13 @@ def get_s3_client(settings: Settings):
 def get_opensearch_client(settings: Settings):
     """Get OpenSearch client with proper configuration.
 
-    For OpenSearch classic, use username/password authentication.
+    For public OpenSearch with anonymous access.
     """
     from opensearchpy import OpenSearch
 
     return OpenSearch(
         hosts=[settings.opensearch_endpoint],
-        http_auth=(settings.opensearch_username, settings.opensearch_password),
+        # No authentication for public access
         use_ssl=True,
         verify_certs=True,
         ssl_assert_hostname=False,

@@ -56,14 +56,9 @@ resource "aws_opensearch_domain" "main" {
   }
 
   advanced_security_options {
-    enabled                        = true
-    anonymous_auth_enabled         = false
-    internal_user_database_enabled = true
-
-    master_user_options {
-      master_user_name     = var.master_user_name
-      master_user_password = var.master_user_password
-    }
+    enabled                        = false  # Disable for public access
+    anonymous_auth_enabled         = true   # Allow anonymous access
+    internal_user_database_enabled = false
   }
 
   access_policies = jsonencode({

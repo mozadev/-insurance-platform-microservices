@@ -121,14 +121,12 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 doc_id = policy.get("policy_id") or policy.get("policyId")
                 if doc_id:
                     doc = _normalize_policy(policy)
-                    # Try OpenSearch with short timeout - graceful degradation
                     try:
-                        # Set a short timeout to avoid Lambda timeouts
                         opensearch.index(
                             index=f"{settings.opensearch_index_prefix}-policies",
                             id=doc_id,
                             body=doc,
-                            timeout=5  # Short timeout in seconds
+                            timeout=5
                         )
                         logger.info(f"Indexed policy {doc_id} to OpenSearch")
                     except Exception as e:
@@ -149,14 +147,12 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 doc_id = claim.get("claim_id") or claim.get("claimId")
                 if doc_id:
                     doc = _normalize_claim(claim)
-                    # Try OpenSearch with short timeout - graceful degradation
                     try:
-                        # Set a short timeout to avoid Lambda timeouts
                         opensearch.index(
                             index=f"{settings.opensearch_index_prefix}-claims",
                             id=doc_id,
                             body=doc,
-                            timeout=5  # Short timeout in seconds
+                            timeout=5
                         )
                         logger.info(f"Indexed claim {doc_id} to OpenSearch")
                     except Exception as e:
