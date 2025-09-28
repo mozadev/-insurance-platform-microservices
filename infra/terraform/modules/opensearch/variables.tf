@@ -32,7 +32,7 @@ variable "lambda_role_arns" {
 variable "instance_type" {
   type        = string
   description = "OpenSearch instance type"
-  default     = "t3.small.search"
+  default     = "t3.small.elasticsearch"
 }
 
 variable "instance_count" {

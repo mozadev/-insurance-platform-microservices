@@ -68,13 +68,13 @@ def get_s3_client(settings: Settings):
 
 
 def get_opensearch_client(settings: Settings):
-    """Get OpenSearch client with proper configuration.
+    """Get Elasticsearch client with proper configuration.
 
-    For public OpenSearch with anonymous access.
+    For public Elasticsearch with anonymous access.
     """
-    from opensearchpy import OpenSearch
+    from elasticsearch import Elasticsearch
 
-    return OpenSearch(
+    return Elasticsearch(
         hosts=[settings.opensearch_endpoint],
         # No authentication for public access
         use_ssl=True,

@@ -189,9 +189,9 @@ output "opensearch_domain_endpoint" {
   description = "OpenSearch domain endpoint"
 }
 
-output "opensearch_dashboard_endpoint" {
-  value       = module.opensearch.dashboard_endpoint
-  description = "OpenSearch Dashboards endpoint"
+output "opensearch_kibana_endpoint" {
+  value       = module.opensearch.kibana_endpoint
+  description = "Kibana endpoint"
 }
 
 output "ingest_lambda_arn" {

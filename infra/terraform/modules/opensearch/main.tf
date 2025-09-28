@@ -12,9 +12,9 @@ locals {
 }
 
 # OpenSearch Domain
-resource "aws_opensearch_domain" "main" {
-  domain_name    = "${local.name}-search"
-  engine_version = "OpenSearch_2.11"
+resource "aws_elasticsearch_domain" "main" {
+  domain_name           = "${local.name}-search"
+  elasticsearch_version = "7.10"
 
   cluster_config {
     instance_type            = var.instance_type
@@ -55,11 +55,8 @@ resource "aws_opensearch_domain" "main" {
     tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
   }
 
-  advanced_security_options {
-    enabled                        = false  # Disable for public access
-    anonymous_auth_enabled         = true   # Allow anonymous access
-    internal_user_database_enabled = false
-  }
+  # Elasticsearch doesn't have advanced_security_options like OpenSearch
+  # We'll use access_policies for security
 
   access_policies = jsonencode({
     Version = "2012-10-17"
@@ -81,12 +78,12 @@ resource "aws_opensearch_domain" "main" {
   })
 
   log_publishing_options {
-    cloudwatch_log_group_arn = aws_cloudwatch_log_group.opensearch.arn
+    cloudwatch_log_group_arn = aws_cloudwatch_log_group.elasticsearch.arn
     log_type                 = "INDEX_SLOW_LOGS"
   }
 
   log_publishing_options {
-    cloudwatch_log_group_arn = aws_cloudwatch_log_group.opensearch.arn
+    cloudwatch_log_group_arn = aws_cloudwatch_log_group.elasticsearch.arn
     log_type                 = "SEARCH_SLOW_LOGS"
   }
 
@@ -96,20 +93,20 @@ resource "aws_opensearch_domain" "main" {
   })
 }
 
-# CloudWatch Log Group for OpenSearch
-resource "aws_cloudwatch_log_group" "opensearch" {
-  name              = "/aws/opensearch/domains/${local.name}-search"
+# CloudWatch Log Group for Elasticsearch
+resource "aws_cloudwatch_log_group" "elasticsearch" {
+  name              = "/aws/elasticsearch/domains/${local.name}-search"
   retention_in_days = var.log_retention_days
 
   tags = merge(var.tags, {
-    Name        = "${local.name}-opensearch-logs"
+    Name        = "${local.name}-elasticsearch-logs"
     Environment = var.environment
   })
 }
 
 # CloudWatch Log Resource Policy
-resource "aws_cloudwatch_log_resource_policy" "opensearch" {
-  policy_name = "${local.name}-opensearch-logs"
+resource "aws_cloudwatch_log_resource_policy" "elasticsearch" {
+  policy_name = "${local.name}-elasticsearch-logs"
 
   policy_document = jsonencode({
     Version = "2012-10-17"
