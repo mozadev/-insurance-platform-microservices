@@ -82,7 +82,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     settings = get_settings()
     s3 = get_s3_client(settings)
-    opensearch = get_opensearch_client(settings)
+    elasticsearch = get_elasticsearch_client(settings)
     validator = EventValidator()
 
     failures: list[dict[str, str]] = []
@@ -122,7 +122,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 if doc_id:
                     doc = _normalize_policy(policy)
                     try:
-                        opensearch.index(
+                        elasticsearch.index(
                             index=f"{settings.opensearch_index_prefix}-policies",
                             id=doc_id,
                             body=doc,
@@ -148,7 +148,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 if doc_id:
                     doc = _normalize_claim(claim)
                     try:
-                        opensearch.index(
+                        elasticsearch.index(
                             index=f"{settings.opensearch_index_prefix}-claims",
                             id=doc_id,
                             body=doc,

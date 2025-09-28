@@ -29,13 +29,13 @@ class Settings(BaseSettings):
     )
     dynamodb_region: str = Field(default="us-east-1", env="DYNAMODB_REGION")
 
-    # OpenSearch Configuration
-    opensearch_endpoint: str = Field(
-        default="http://localhost:9200", env="OPENSEARCH_ENDPOINT"
+    # Elasticsearch Configuration
+    elasticsearch_endpoint: str = Field(
+        default="http://localhost:9200", env="ELASTICSEARCH_ENDPOINT"
     )
-    opensearch_username: str = Field(default="admin", env="OPENSEARCH_USERNAME")
-    opensearch_password: str = Field(default="admin", env="OPENSEARCH_PASSWORD")
-    opensearch_index_prefix: str = Field(default="ins", env="OPENSEARCH_INDEX_PREFIX")
+    elasticsearch_username: str = Field(default="admin", env="ELASTICSEARCH_USERNAME")
+    elasticsearch_password: str = Field(default="admin", env="ELASTICSEARCH_PASSWORD")
+    elasticsearch_index_prefix: str = Field(default="ins", env="ELASTICSEARCH_INDEX_PREFIX")
 
     # Redis Configuration
     redis_url: str = Field(default="redis://localhost:6379", env="REDIS_URL")

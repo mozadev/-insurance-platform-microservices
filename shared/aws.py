@@ -67,7 +67,7 @@ def get_s3_client(settings: Settings):
     )
 
 
-def get_opensearch_client(settings: Settings):
+def get_elasticsearch_client(settings: Settings):
     """Get Elasticsearch client with proper configuration.
 
     For Elasticsearch with authentication.
@@ -75,8 +75,8 @@ def get_opensearch_client(settings: Settings):
     from elasticsearch import Elasticsearch
 
     return Elasticsearch(
-        hosts=[f"https://{settings.opensearch_endpoint}"],
-        basic_auth=(settings.opensearch_username, settings.opensearch_password),
+        hosts=[f"https://{settings.elasticsearch_endpoint}"],
+        http_auth=(settings.elasticsearch_username, settings.elasticsearch_password),
         verify_certs=True,
         ssl_assert_hostname=False,
         ssl_show_warn=False,

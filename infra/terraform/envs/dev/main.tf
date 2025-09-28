@@ -110,10 +110,10 @@ module "ingest_lambda" {
     SERVICE_NAME              = "ingest-svc"
     SERVICE_PORT              = "8000"
     LOG_LEVEL                 = "INFO"
-    OPENSEARCH_INDEX_PREFIX   = "ins"
-    OPENSEARCH_ENDPOINT       = module.opensearch.domain_endpoint
-    OPENSEARCH_USERNAME       = "admin"
-    OPENSEARCH_PASSWORD       = var.opensearch_master_password
+    ELASTICSEARCH_INDEX_PREFIX   = "ins"
+    ELASTICSEARCH_ENDPOINT       = module.opensearch.domain_endpoint
+    ELASTICSEARCH_USERNAME       = "admin"
+    ELASTICSEARCH_PASSWORD       = var.opensearch_master_password
     S3_BRONZE_BUCKET          = module.storage.bronze_bucket_name
     S3_SILVER_BUCKET          = module.storage.silver_bucket_name
     POLICIES_TOPIC_ARN        = module.messaging.policies_topic_arn
