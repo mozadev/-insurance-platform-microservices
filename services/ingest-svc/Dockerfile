@@ -2,7 +2,7 @@ FROM public.ecr.aws/lambda/python:3.12
 
 # Copy requirements and install dependencies
 COPY services/ingest-svc/pyproject.toml ${LAMBDA_TASK_ROOT}/
-RUN pip install --upgrade pip && pip install fastapi uvicorn boto3 elasticsearch pydantic-settings jsonschema opentelemetry-api opentelemetry-sdk structlog requests
+RUN pip install --upgrade pip && pip install fastapi uvicorn boto3 "elasticsearch==7.17.9" pydantic-settings jsonschema opentelemetry-api opentelemetry-sdk structlog requests
 
 # Copy application code
 COPY services/ingest-svc/app ${LAMBDA_TASK_ROOT}/app
@@ -11,5 +11,4 @@ COPY contracts ${LAMBDA_TASK_ROOT}/contracts
 
 # Set the CMD to your handler
 CMD ["app.lambda_handler.handler"]
-
 
