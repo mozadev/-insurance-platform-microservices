@@ -67,7 +67,7 @@ resource "aws_opensearch_domain" "main" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "*"
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         }
         Action = [
           "es:ESHttpGet",
@@ -76,13 +76,6 @@ resource "aws_opensearch_domain" "main" {
           "es:ESHttpDelete"
         ]
         Resource = "arn:aws:es:${var.aws_region}:${data.aws_caller_identity.current.account_id}:domain/${local.name}-search/*"
-        Condition = {
-          IpAddress = {
-            "aws:SourceIp" = [
-              "0.0.0.0/0"  # Allow from anywhere for testing - in production, restrict to specific IPs
-            ]
-          }
-        }
       }
     ]
   })
