@@ -128,7 +128,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                             index=f"{settings.opensearch_index_prefix}-policies",
                             id=doc_id,
                             body=doc,
-                            timeout="5s"  # Short timeout
+                            timeout=5  # Short timeout in seconds
                         )
                         logger.info(f"Indexed policy {doc_id} to OpenSearch")
                     except Exception as e:
@@ -156,7 +156,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                             index=f"{settings.opensearch_index_prefix}-claims",
                             id=doc_id,
                             body=doc,
-                            timeout="5s"  # Short timeout
+                            timeout=5  # Short timeout in seconds
                         )
                         logger.info(f"Indexed claim {doc_id} to OpenSearch")
                     except Exception as e:
