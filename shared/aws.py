@@ -80,4 +80,8 @@ def get_opensearch_client(settings: Settings):
         verify_certs=True,
         ssl_assert_hostname=False,
         ssl_show_warn=False,
+        # Configure for AWS Elasticsearch 7.10 compatibility
+        headers={"Content-Type": "application/json"},
+        # Disable version compatibility headers
+        compatibility_mode=False,
     )
