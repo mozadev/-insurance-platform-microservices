@@ -71,7 +71,7 @@ resource "aws_elasticsearch_domain" "main" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+          AWS = "*"
         }
         Action = [
           "es:ESHttpGet",
