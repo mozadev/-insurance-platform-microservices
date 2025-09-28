@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from shared.aws import get_opensearch_client, get_s3_client
+from shared.aws import get_elasticsearch_client, get_s3_client
 from shared.config import get_settings
 from shared.events import EventValidator
 from shared.logging import configure_logging, get_logger
