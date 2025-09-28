@@ -73,14 +73,10 @@ def get_opensearch_client(settings: Settings):
     For Elasticsearch with authentication.
     """
     from elasticsearch import Elasticsearch
-    from requests.auth import HTTPBasicAuth
-
-    # Use basic authentication with username and password
-    auth = HTTPBasicAuth(settings.opensearch_username, settings.opensearch_password)
 
     return Elasticsearch(
         hosts=[f"https://{settings.opensearch_endpoint}"],
-        http_auth=auth,
+        basic_auth=(settings.opensearch_username, settings.opensearch_password),
         verify_certs=True,
         ssl_assert_hostname=False,
         ssl_show_warn=False,
