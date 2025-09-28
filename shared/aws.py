@@ -70,13 +70,17 @@ def get_s3_client(settings: Settings):
 def get_opensearch_client(settings: Settings):
     """Get Elasticsearch client with proper configuration.
 
-    For public Elasticsearch with anonymous access.
+    For Elasticsearch with authentication.
     """
     from elasticsearch import Elasticsearch
+    from requests.auth import HTTPBasicAuth
+
+    # Use basic authentication with username and password
+    auth = HTTPBasicAuth(settings.opensearch_username, settings.opensearch_password)
 
     return Elasticsearch(
         hosts=[f"https://{settings.opensearch_endpoint}"],
-        # No authentication for public access
+        http_auth=auth,
         verify_certs=True,
         ssl_assert_hostname=False,
         ssl_show_warn=False,
