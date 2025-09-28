@@ -70,7 +70,7 @@ def get_s3_client(settings: Settings):
 def get_elasticsearch_client(settings: Settings):
     """Get Elasticsearch client with proper configuration.
 
-    For Elasticsearch with authentication.
+    For AWS Elasticsearch with authentication.
     """
     from elasticsearch import Elasticsearch
 
@@ -82,4 +82,8 @@ def get_elasticsearch_client(settings: Settings):
         ssl_show_warn=False,
         # Configure for AWS Elasticsearch 7.10 compatibility
         headers={"Content-Type": "application/json"},
+        # Disable distribution check for AWS Elasticsearch
+        verify_ssl=True,
+        # AWS Elasticsearch specific settings
+        connection_class=None,
     )
