@@ -75,9 +75,8 @@ def get_opensearch_client(settings: Settings):
     from elasticsearch import Elasticsearch
 
     return Elasticsearch(
-        hosts=[settings.opensearch_endpoint],
+        hosts=[f"https://{settings.opensearch_endpoint}"],
         # No authentication for public access
-        use_ssl=True,
         verify_certs=True,
         ssl_assert_hostname=False,
         ssl_show_warn=False,
