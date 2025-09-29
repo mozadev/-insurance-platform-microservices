@@ -68,22 +68,32 @@ def get_s3_client(settings: Settings):
 
 
 def get_elasticsearch_client(settings: Settings):
-    """Get Elasticsearch client with proper configuration.
+    """Get Elasticsearch client using requests to bypass distribution check.
 
     For AWS Elasticsearch with authentication.
     """
-    from elasticsearch import Elasticsearch
-
-    return Elasticsearch(
-        hosts=[f"https://{settings.elasticsearch_endpoint}"],
-        http_auth=(settings.elasticsearch_username, settings.elasticsearch_password),
-        verify_certs=True,
-        ssl_assert_hostname=False,
-        ssl_show_warn=False,
-        # Configure for AWS Elasticsearch 7.10 compatibility
-        headers={"Content-Type": "application/json"},
-        # Disable distribution check for AWS Elasticsearch
-        verify_ssl=True,
-        # AWS Elasticsearch specific settings
-        connection_class=None,
+    import requests
+    from requests.auth import HTTPBasicAuth
+    
+    class AWSESClient:
+        def __init__(self, endpoint, username, password):
+            self.base_url = f"https://{endpoint}"
+            self.auth = HTTPBasicAuth(username, password)
+            self.session = requests.Session()
+            self.session.auth = self.auth
+            self.session.headers.update({"Content-Type": "application/json"})
+        
+        def index(self, index, id=None, body=None, timeout=5):
+            url = f"{self.base_url}/{index}/_doc"
+            if id:
+                url += f"/{id}"
+            
+            response = self.session.put(url, json=body, timeout=timeout)
+            response.raise_for_status()
+            return response.json()
+    
+    return AWSESClient(
+        settings.elasticsearch_endpoint,
+        settings.elasticsearch_username,
+        settings.elasticsearch_password
     )
