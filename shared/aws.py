@@ -83,7 +83,7 @@ def get_elasticsearch_client(settings: Settings):
             self.session.auth = self.auth
             self.session.headers.update({"Content-Type": "application/json"})
         
-        def index(self, index, id=None, body=None, timeout=5):
+        def index(self, index, id=None, body=None, timeout=30):
             url = f"{self.base_url}/{index}/_doc"
             if id:
                 url += f"/{id}"
