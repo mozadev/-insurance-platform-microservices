@@ -17,6 +17,8 @@ Guía completa para desarrolladores que se unen al equipo.
 
 Bienvenido al equipo de **Insurance Microservices Platform**. Esta guía te ayudará a configurar tu entorno de desarrollo y comenzar a contribuir.
 
+> **Nota:** Si eres nuevo en el proyecto, te recomendamos leer primero el README.md para entender la arquitectura general.
+
 ## 📦 Requisitos Previos
 
 ### Software Requerido
