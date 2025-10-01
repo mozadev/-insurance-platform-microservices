@@ -1,6 +1,13 @@
-# Insurance Data Platform - Microservices
+# 🏢 Insurance Data Platform - Microservices
+
+[![CI/CD](https://github.com/tu-empresa/insurance-microservices/workflows/CI/badge.svg)](https://github.com/tu-empresa/insurance-microservices/actions)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
+[![AWS](https://img.shields.io/badge/AWS-Deployed-orange.svg)](https://aws.amazon.com/)
 
 A production-ready microservices platform for insurance data management with policy and claims processing, built on AWS with event-driven architecture.
+
+> **📖 Para nuevos desarrolladores**: Lee [DEVELOPMENT.md](DEVELOPMENT.md) para configurar tu entorno de desarrollo.
 
 ## 🏗️ Architecture Overview
 
@@ -214,11 +221,24 @@ GitHub Actions pipeline:
 
 ## 🤝 Contributing
 
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+**Quick Start for Contributors:**
+
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
+2. Clone: `git clone https://github.com/YOUR_USERNAME/insurance-microservices.git`
+3. Setup: Follow [DEVELOPMENT.md](DEVELOPMENT.md)
+4. Create a feature branch: `git checkout -b feature/your-feature`
+5. Make your changes and add tests
+6. Run checks: `make check` and `make test`
+7. Commit: Use [Conventional Commits](https://www.conventionalcommits.org/)
+8. Push and create a Pull Request
+
+**Resources for New Contributors:**
+- 📖 [Development Guide](DEVELOPMENT.md) - Setup and workflow
+- 📝 [Contributing Guidelines](CONTRIBUTING.md) - Standards and process
+- 🐛 [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md)
+- ✨ [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md)
 
 ## 📄 License
 

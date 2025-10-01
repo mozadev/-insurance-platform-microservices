@@ -1,101 +1,85 @@
-.PHONY: help setup compose:up compose:down bootstrap demo lint type test clean
+.PHONY: help setup clean test lint format check
+.PHONY: local-up local-down local-bootstrap
+.PHONY: docker-build tf-plan tf-apply
 
-# Default target
 help:
-	@echo "Available commands:"
-	@echo "  setup          - Install dependencies and setup development environment"
-	@echo "  compose:up      - Start local development stack with Docker Compose"
-	@echo "  compose:down    - Stop local development stack"
-	@echo "  bootstrap       - Create AWS resources in LocalStack"
-	@echo "  demo            - Run demo with sample data"
-	@echo "  lint            - Run linting with ruff"
-	@echo "  type            - Run type checking with mypy"
-	@echo "  test            - Run all tests"
-	@echo "  clean           - Clean up temporary files and containers"
+	@echo "Insurance Microservices - Available Commands"
+	@echo ""
+	@echo "Setup:"
+	@echo "  make setup          - Setup development environment"
+	@echo "  make clean          - Clean temporary files"
+	@echo ""
+	@echo "Development:"
+	@echo "  make local-up       - Start local infrastructure"
+	@echo "  make local-down     - Stop local infrastructure"
+	@echo "  make local-bootstrap - Create local resources"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test           - Run all tests"
+	@echo "  make test-coverage  - Run tests with coverage"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  make lint           - Run linter"
+	@echo "  make format         - Format code"
+	@echo "  make typecheck      - Run type checker"
+	@echo "  make check          - Run all checks"
+	@echo ""
+	@echo "Docker:"
+	@echo "  make docker-build   - Build Docker images"
+	@echo ""
+	@echo "Infrastructure:"
+	@echo "  make tf-plan        - Terraform plan"
+	@echo "  make tf-apply       - Terraform apply"
 
-# Setup development environment
 setup:
 	@echo "Setting up development environment..."
-	python -m pip install --upgrade pip
-	pip install uv
-	uv sync
-	pre-commit install
-	@echo "Setup complete!"
+	python3 -m venv venv
+	./venv/bin/pip install --upgrade pip
+	@echo "✓ Setup complete! Run 'source venv/bin/activate'"
 
-# Docker Compose commands
-compose:up:
-	@echo "Starting local development stack..."
+clean:
+	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	@echo "✓ Cleanup complete!"
+
+local-up:
+	@echo "Starting local infrastructure..."
 	docker-compose -f local/docker-compose.yml up -d
-	@echo "Waiting for services to be ready..."
-	sleep 30
-	@echo "Services started! Check status with: docker-compose -f local/docker-compose.yml ps"
+	@echo "✓ Infrastructure started!"
 
-compose:down:
-	@echo "Stopping local development stack..."
+local-down:
 	docker-compose -f local/docker-compose.yml down
-	@echo "Stack stopped!"
 
-# Bootstrap AWS resources
-bootstrap:
-	@echo "Bootstrapping AWS resources in LocalStack..."
-	chmod +x local/bootstrap/create-resources.sh
-	./local/bootstrap/create-resources.sh
-	@echo "Bootstrap complete!"
-
-# Run demo
-demo:
-	@echo "Running demo with sample data..."
-	python local/bootstrap/seed-data.py
-	@echo "Demo complete! Check the logs for results."
-
-# Quality checks
-lint:
-	@echo "Running linting..."
-	ruff check services/ tests/ local/bootstrap/
-	@echo "Linting complete!"
-
-type:
-	@echo "Running type checking..."
-	mypy services/ tests/ local/bootstrap/
-	@echo "Type checking complete!"
+local-bootstrap:
+	cd local/bootstrap && ./create-resources.sh
 
 test:
-	@echo "Running tests..."
-	pytest tests/ -v --cov=services --cov-report=html --cov-report=term
-	@echo "Tests complete!"
+	pytest tests/ -v
 
-# Clean up
-clean:
-	@echo "Cleaning up..."
-	docker-compose -f local/docker-compose.yml down -v
-	docker system prune -f
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-	find . -type d -name ".pytest_cache" -exec rm -rf {} +
-	find . -type d -name ".mypy_cache" -exec rm -rf {} +
-	find . -type d -name ".ruff_cache" -exec rm -rf {} +
-	rm -rf htmlcov/
-	@echo "Cleanup complete!"
+test-coverage:
+	pytest tests/ -v --cov=services --cov=shared --cov-report=html
+	@echo "✓ Coverage report: htmlcov/index.html"
 
-# Service-specific commands
-test-policy:
-	pytest tests/policy-svc/ -v
+lint:
+	ruff check services/ shared/ tests/
 
-test-claim:
-	pytest tests/claim-svc/ -v
+format:
+	ruff format services/ shared/ tests/
+	ruff check --fix services/ shared/ tests/ || true
 
-test-search:
-	pytest tests/search-svc/ -v
+typecheck:
+	mypy services/ shared/
 
-test-ingest:
-	pytest tests/ingest-svc/ -v
+check: lint typecheck
+	@echo "✓ All checks passed!"
 
-# Development helpers
-logs:
-	docker-compose -f local/docker-compose.yml logs -f
+docker-build:
+	docker build -t insurance-ingest-svc:latest -f services/ingest-svc/Dockerfile .
 
-restart:
-	docker-compose -f local/docker-compose.yml restart
+tf-plan:
+	cd infra/terraform/envs/dev && terraform plan
 
-status:
-	docker-compose -f local/docker-compose.yml ps
+tf-apply:
+	cd infra/terraform/envs/dev && terraform apply
